@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/RorySchof/tinyapp/issues"
   },
-  "homepage": "https://github.com/RorySchof/tinyapp#readme"
+  "homepage": "https://github.com/RorySchof/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
