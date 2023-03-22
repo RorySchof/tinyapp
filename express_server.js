@@ -1,9 +1,12 @@
+const { request } = require("express");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
+
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -20,9 +23,22 @@ function generateRandomString(length) {
   return result;
 }
 
+app.get("/u/:id", (req, res) => {
+  const shortUrl = req.params.id
+  const longURL = urlDatabase[shortUrl]
+  res.redirect(longURL);
+});
+
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
+  const longURL = req.body.longURL; // Log the POST request body to the console
+  const id = generateRandomString(6);
+  urlDatabase [id] = longURL
   res.send("Ok"); // Respond with 'Ok' (we will replace this)
+});
+app.post("/urls/:id/delete", (req, res) => {
+  const shortUrl = req.params.id
+  const longURL = delete urlDatabase[shortUrl]
+  res.redirect('/urls')
 });
 
 app.get("/urls/new", (req, res) => {
