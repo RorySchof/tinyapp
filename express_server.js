@@ -1,3 +1,6 @@
+const bcrypt = require("bcryptjs");
+const password = "purple-monkey-dinosaur"; // found in the req.body object
+const hashedPassword = bcrypt.hashSync(password, 10);
 const express = require("express");
 const app = express();
 const bodyParser = require('body-parser');
@@ -82,6 +85,10 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
+  
+  app.post('/register', (req, res) => {
+    const { email, password } = req.body;
+
   // CHECK IF EMAIL OR PASSWORDS ARE EMPTY
 
   if (!email || !password) {
@@ -91,6 +98,19 @@ app.post('/login', (req, res) => {
 
   const user = getUserByEmail(email);
 
+   // CHECK IF USER ALREADY EXISTS
+
+   if (getUserByEmail(email)) {
+    res.status(400).send('USER ALREADY EXISTS!!!');
+    return;
+  }
+
+   // CREATE NEW USER AND ADD TO DATABASE
+
+   const id = generateRandomString();
+   const hashedPassword = bcrypt.hashSync(password, 10);
+   usersDatabase[id] = { id, email, password: hashedPassword };
+
   // CHECK IF USER EXISTS AND PASSWORD IS CORRECT
 
   if (!user) {
@@ -98,7 +118,7 @@ app.post('/login', (req, res) => {
     return;
   }
 
-  if (user.password !== password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     res.status(403).send('PASSWORD IS WRONG. BE BETTER!!!');
     return;
   }
@@ -109,6 +129,13 @@ app.post('/login', (req, res) => {
 
   res.redirect('/urls');
 });
+
+  // SET USER_ID COOKIE WITH USER ID
+
+  res.cookie('user_id', id, { signed: true });
+
+  res.redirect('/urls');
+})
 
 app.post("/urls/:id/delete", (req, res) => {
   const user_id = req.signedCookies.user_id;
@@ -179,6 +206,11 @@ app.post("/urls/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+// CHECK IF PASSWORD IS CORRECT
+
+bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword); // returns true
+bcrypt.compareSync("pink-donkey-minotaur", hashedPassword); // returns false
 
 
 
