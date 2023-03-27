@@ -11,13 +11,31 @@ app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longUrl: "http://www.lighthouselabs.ca",
+    userId: "userRandomID"
+  },
+  "9sm5xK": {
+    longUrl: "http://www.google.com",
+    userId: "user2RandomID"
+  }
 };
 
-const usersDatabase = {};
+const usersDatabase = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "name@efakeemail.com",
+    password: "1234"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "name2@fakeemail.com",
+    password: "4321"
+  }
+};
 
-// Helper function to find a user by email
+// HELPER FUNCTIONS
+
 const getUserByEmail = function(email) {
   for (const userId in usersDatabase) {
     const user = usersDatabase[userId];
@@ -28,20 +46,44 @@ const getUserByEmail = function(email) {
   return null;
 };
 
+const urlsForUser = function(id) {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    const url = urlDatabase[shortURL];
+    if (url.userId === id) {
+      userUrls[shortURL] = url.longUrl;
+    }
+  }
+  return userUrls;
+};
+
+const isLoggedIn = (req) => {
+  return !!req.signedCookies.user_id;
+};
+
 // ROUTING
 
 app.get('/register', (req, res) => {
-  res.render('register');
+  if (isLoggedIn(req)) {
+    res.redirect('/urls');
+  } else {
+    res.render('register');
+  }
 });
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  if (isLoggedIn(req)) {
+    res.redirect('/urls');
+  } else {
+    res.render('login');
+  }
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
-  // check if email or password are empty
+  // CHECK IF EMAIL OR PASSWORDS ARE EMPTY
+
   if (!email || !password) {
     res.status(400).send('GIVE US YOUR EMAIL AND PASSWORD!!!');
     return;
@@ -49,58 +91,94 @@ app.post('/login', (req, res) => {
 
   const user = getUserByEmail(email);
 
-  // check if user exists and password is correct
+  // CHECK IF USER EXISTS AND PASSWORD IS CORRECT
+
   if (!user) {
-    res.status(403).send('WE CANT FIND YOUR EMAIL');
+    res.status(403).send('EMAIL IS WRONG. BE BETTER!!!');
     return;
   }
 
   if (user.password !== password) {
-    res.status(403).send('PASSWORD IS WRONG. BE BETTER');
+    res.status(403).send('PASSWORD IS WRONG. BE BETTER!!!');
     return;
   }
 
-  // set user_id cookie with user id
+  // SET USER_ID COOKIE WITH USER ID
+
   res.cookie('user_id', user.id, { signed: true });
 
   res.redirect('/urls');
 });
 
-app.post("/logout", (req, res) => {
-  res.clearCookie("user_id", {path: "/"});
-  res.redirect('/login');
-});
-
-app.get("/urls", (req, res) => {
-  const templateVars = {
-    user_id: req.signedCookies.user_id,
-    urls: urlDatabase
-  };
-  res.render("urls_index", templateVars);
-});
-
-app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL; // Log the POST request body to the console
-  const id = generateRandomString(6);
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`); // Redirect to newly created short URL
-});
-
 app.post("/urls/:id/delete", (req, res) => {
-  const shortUrl = req.params.id;
-  delete urlDatabase[shortUrl];
+  const user_id = req.signedCookies.user_id;
+  const shortURL = req.params.id;
+  const url = urlDatabase[shortURL];
+  
+  // CHECK IF URL EXISTS. 
+
+  if (!url) {
+    res.status(404).send('URL NOT FOUND. BOO!!!');
+    return;
+  }
+  
+  // CHECK IF USER IS LOGGED IN
+
+  if (!isLoggedIn(req)) {
+    res.status(401).send('STOP TRYING TO DELETE URLs WITHOUT LOGGING IN!!!');
+    return;
+  }
+
+  // CHECK IF USER OWN THE URL
+
+  if (url.userId !== user_id) {
+    res.status(403).send('YOU DO NOT HAVE PERMISSION TO DELETE THIS URL. SILLY HACKER!!!');
+    return;
+  }
+
+  // DELETE URL FROM DATABASE
+  
+  delete urlDatabase[shortURL];
+
   res.redirect('/urls');
 });
 
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
+app.post("/urls/:id", (req, res) => {
+  const user_id = req.signedCookies.user_id;
+  const shortURL = req.params.id;
+  const url = urlDatabase[shortURL];
+  
+  // CHECK IF URL EXISTS
 
-app.get("/urls/:id", (req, res) => {
-  const templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id] };
-  res.render("urls_show", templateVars);
+  if (!url) {
+    res.status(404).send('URL NOT FOUND. BOO!!!');
+    return;
+  }
+  
+  // CHECK IF USER IS LOGGED IN
+
+  if (!isLoggedIn(req)) {
+    res.status(401).send('STOP TRYING TO EDIT URLs WITHOUT LOGGING IN!!!');
+    return;
+  }
+
+  // CHECK IF USER OWN THE URL
+
+  if (url.userId !== user_id) {
+    res.status(403).send('YOU DO NOT HAVE PERMISSION TO EDIT THIS URL. SILLY HACKER!!!');
+    return;
+  }
+
+  // UPDATE LONG URL
+
+  url.longUrl = req.body.longURL;
+
+  res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+
+
