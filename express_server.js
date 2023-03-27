@@ -1,10 +1,12 @@
 const { request } = require("express");
 const express = require("express");
 const app = express();
+const cookieParser = require('cookie-parser');
 const PORT = 8080; // default port 8080
 
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
+//app.use(express.cookieParser());
 
 
 
@@ -19,9 +21,16 @@ function generateRandomString(length) {
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     result += characters[randomIndex]
-}
+  }
   return result;
 }
+
+app.post("/login", (req, res) => {
+  console.log(req.body.username)
+  res.cookie("username", req.body.username)
+  res.redirect('/urls')
+})
+
 
 app.get("/u/:id", (req, res) => {
   const shortUrl = req.params.id
@@ -32,7 +41,7 @@ app.get("/u/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL; // Log the POST request body to the console
   const id = generateRandomString(6);
-  urlDatabase [id] = longURL
+  urlDatabase[id] = longURL
   res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
 app.post("/urls/:id/delete", (req, res) => {
