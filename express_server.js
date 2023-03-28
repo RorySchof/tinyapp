@@ -1,22 +1,16 @@
 const bcrypt = require("bcryptjs");
-
 const { request } = require("express");
 const { getUserByEmail } = require("./helpers");
 const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-
 const PORT = 8080; // default port 8080
 
 app.use(cookieParser('some-secret-key'));
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
-//app.use(express.cookieParser());
-
-
 
 const urlDatabase = {
   "b2xVn2": {
@@ -52,7 +46,6 @@ function generateRandomString(length) {
   return result;
 }
 
-
 const isLoggedIn = (req) => {
   return !!req.signedCookies?.user_id;
 };
@@ -62,7 +55,7 @@ app.get('/login', (req, res) => {
     res.redirect('/urls');
   } else {
     const templateVars = { urls: urlDatabase, username: '' };
-  res.render("urls_index", templateVars);
+    res.render("urls_index", templateVars);
   }
 });
 
@@ -135,7 +128,7 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL; // Log the POST request body to the console
   const id = generateRandomString(6);
   urlDatabase[id] = longURL
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  res.send("Ok"); 
 });
 app.post("/urls/:id/delete", (req, res) => {
   const shortUrl = req.params.id
