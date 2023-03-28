@@ -1,8 +1,16 @@
+const bcrypt = require("bcryptjs");
+
 const { request } = require("express");
+const { getUserByEmail } = require("./helpers");
 const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+
 const PORT = 8080; // default port 8080
+
+app.use(cookieParser('some-secret-key'));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -11,8 +19,27 @@ app.set("view engine", "ejs");
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longUrl: "http://www.lighthouselabs.ca",
+    userId: "userRandomID"
+  },
+  "9sm5xK": {
+    longUrl: "http://www.google.com",
+    userId: "user2RandomID"
+  }
+};
+
+const usersDatabase = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "name@efakeemail.com",
+    password: "1234"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "name2@fakeemail.com",
+    password: "4321"
+  }
 };
 
 function generateRandomString(length) {
@@ -24,6 +51,72 @@ function generateRandomString(length) {
   }
   return result;
 }
+
+
+const isLoggedIn = (req) => {
+  return !!req.signedCookies?.user_id;
+};
+
+app.get('/login', (req, res) => {
+  if (isLoggedIn(req)) {
+    res.redirect('/urls');
+  } else {
+    const templateVars = { urls: urlDatabase, username: '' };
+  res.render("urls_index", templateVars);
+  }
+});
+
+app.get('/register', (req, res) => {
+  if (isLoggedIn(req)) {
+    res.redirect('/urls');
+  } else {
+    res.render('register');
+  }
+});
+
+app.post('/register', (req, res) => {
+  const { email, password } = req.body;
+
+  // CHECK IF EMAIL OR PASSWORDS ARE EMPTY
+
+  if (!email || !password) {
+    res.status(400).send('GIVE US YOUR EMAIL AND PASSWORD!!!');
+    return;
+  }
+
+  const user = getUserByEmail(email);
+
+  // CHECK IF USER ALREADY EXISTS
+
+  if (getUserByEmail(email)) {
+    res.status(400).send('USER ALREADY EXISTS!!!');
+    return;
+  }
+
+  // CREATE NEW USER AND ADD TO DATABASE
+
+  const id = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  usersDatabase[id] = { id, email, password: hashedPassword };
+
+  // CHECK IF USER EXISTS AND PASSWORD IS CORRECT
+
+  if (!user) {
+    res.status(403).send('EMAIL IS WRONG. BE BETTER!!!');
+    return;
+  }
+
+  if (!bcrypt.compareSync(password, user.password)) {
+    res.status(403).send('PASSWORD IS WRONG. BE BETTER!!!');
+    return;
+  }
+
+  // SET USER_ID COOKIE WITH USER ID
+
+  res.cookie('user_id', user.id, { signed: true });
+
+  res.redirect('/urls');
+});
 
 app.post("/login", (req, res) => {
   console.log(req.body.username)
@@ -55,7 +148,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: '' };
   res.render("urls_index", templateVars);
 });
 
