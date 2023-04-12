@@ -1,0 +1,38 @@
+<%- include('partials/_header') %> 
+
+<main style="max-width: 50vw;" class="container d-flex justify-content-center align-items-center mb-5">
+  <div class="row d-flex justify-content-center">
+    <div class="col-md-17 mt-4">
+      <div class="card shadow">
+        <img src="images/Tiny.png" alt="" class="card-img-top mx-auto" />
+        <div class="card-body">
+          <h3 class="card-title text-center mb-4">Login</h3>
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <label for="emailInput" class="form-label">Email address</label>
+              <input type="email" name="email" class="form-control" id="emailInput" aria-describedby="emailHelp" />
+              <div id="emailHelp" class="form-text">
+                We'll never share your email with anyone else.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="passwordInput" class="form-label">Password</label>
+              <input type="password" name="password" class="form-control" id="passwordInput" />
+            </div>
+            <div class="d-grid d-block">
+              <button class="btn btn-success">Login</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main> 
+
+
+
+
+<%- include('partials/_footer') %> 
+
+
+
