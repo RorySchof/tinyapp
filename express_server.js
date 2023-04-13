@@ -68,7 +68,6 @@ app.get('/login', (req, res) => {
   } else {
     // const templateVars = { urls: urlDatabase, user: usersDatabase[req.session.user_id] };
     // res.render("urls_index", templateVars);
-
     return res.render("urls_login", { user: '' });
   }
 });
@@ -110,24 +109,6 @@ app.post('/register', (req, res) => {
 }
   req.session.user_id = id
   res.redirect('/urls');
-
-  // CHECK IF USER EXISTS AND PASSWORD IS CORRECT
-
-  // if (!user) {
-  //   res.status(403).send('EMAIL IS WRONG. BE BETTER!!!');
-  //   return;
-  // }
-
-  // if (!bcrypt.compareSync(password, user.password)) {
-  //   res.status(403).send('PASSWORD IS WRONG. BE BETTER!!!');
-  //   return;
-  // }
-
-  // SET USER_ID COOKIE WITH USER ID
-
-  // res.cookie('user_id', user.id, { signed: true });
-
-
 });
 
 app.post("/login", (req, res) => {
@@ -201,14 +182,6 @@ const urls= urlsForUser(req.session.user_id, urlDatabase)
   const templateVars = { urls: urls, user: usersDatabase[req.session.user_id] };
   res.render("urls_index", templateVars);
 });
-
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
 
 app.get("/", (req, res) => {
 
