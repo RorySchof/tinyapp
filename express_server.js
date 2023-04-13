@@ -157,6 +157,10 @@ app.post ('/logout', (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const shortUrl = req.params.id
+  if (!urlDatabase[shortUrl]){
+
+    return res.send("<h2>the url does not contain https,so it did not work</h2>")
+  }
   const longURL = urlDatabase[shortUrl].longUrl
   res.redirect(longURL);
 });
@@ -206,11 +210,19 @@ const urls= urlsForUser(req.session.user_id, urlDatabase)
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
 
-// app.get("/", (req, res) => {
-//   res.send("Hello!");
-// });
+app.get("/", (req, res) => {
+
+  if (!isLoggedIn(req)) {
+    return res.redirect('/login');
+  }
+   res.redirect("/urls")
+});
 
 app.get("/urls/:id", (req, res) => {
+  if (!isLoggedIn(req)) {
+    return res.redirect('/login');
+  }
+
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longUrl, user: usersDatabase[req.session.user_id] };
 
   res.render("urls_show", templateVars);
