@@ -48,15 +48,6 @@ const usersDatabase = {
 };
 const ID_LENGTH = 6
 
-// function generateRandomString(length) {
-//   const characters = "abcdefghijklmnopqrstuvwxyz";
-//   let result = '';
-//   for (let i = 0; i < length; i++) {
-//     const randomIndex = Math.floor(Math.random() * characters.length);
-//     result += characters[randomIndex]
-//   }
-//   return result;
-// }
 
 const isLoggedIn = (req) => {
   return req.session.user_id;
@@ -66,8 +57,7 @@ app.get('/login', (req, res) => {
   if (isLoggedIn(req)) {
     res.redirect('/urls');
   } else {
-    // const templateVars = { urls: urlDatabase, user: usersDatabase[req.session.user_id] };
-    // res.render("urls_index", templateVars);
+
     return res.render("urls_login", { user: '' });
   }
 });
@@ -86,6 +76,8 @@ app.post('/register', (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
 
   // CHECK IF EMAIL OR PASSWORDS ARE EMPTY
+
+
 
   if (!email || !password) {
     res.status(400).send('GIVE US YOUR EMAIL AND PASSWORD!!!');
@@ -106,15 +98,18 @@ app.post('/register', (req, res) => {
     id,
     email,
     password: hashedPassword
-}
+  }
   req.session.user_id = id
   res.redirect('/urls');
 });
 
 app.post("/login", (req, res) => {
-  // console.log(req.body.username)
-  // res.cookie("username", req.body.username)
+
   const { email, password } = req.body
+  if (!email || !password) {
+    res.status(403).send('FIELDS CAN NOT BE BLANK');
+    return
+  }
   const user = getUserByEmail(email, usersDatabase)
   if (!user) {
     res.status(403).send('EMAIL IS WRONG. BE BETTER!!!');
@@ -129,16 +124,16 @@ app.post("/login", (req, res) => {
   res.redirect('/urls')
 })
 
-app.post ('/logout', (req, res) => {
-    res.clearCookie('user_id');
-    req.session.user_id = null;
-    return res.redirect('/login');
-  });
+app.post('/logout', (req, res) => {
+  res.clearCookie('user_id');
+  req.session.user_id = null;
+  return res.redirect('/login');
+});
 
 
 app.get("/u/:id", (req, res) => {
   const shortUrl = req.params.id
-  if (!urlDatabase[shortUrl]){
+  if (!urlDatabase[shortUrl]) {
 
     return res.send("<h2>the url does not contain https,so it did not work</h2>")
   }
@@ -153,9 +148,45 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls`)
 });
 
+// need an app post /urls/ulbyat
+
+
+app.post("/urls/:id", (req, res) => {
+  const longUrl = req.body.longUrl;
+  const foundUrl = urlDatabase[req.params.id]
+  console.log("test string", foundUrl)
+
+  if (!foundUrl) {
+    res.status(403).send('URL NOT FOUND');
+    return;
+  }
+
+  if (req.session.user_id !== foundUrl.userId) {
+
+    res.status(403).send('THIS URL DOES NOT BELONG TO YOU');
+    return;
+  }
+  foundUrl.longUrl = longUrl
+
+  res.redirect('/urls')
+});
+
 app.post("/urls/:id/delete", (req, res) => {
-  const shortUrl = req.params.id
-  const longURL = delete urlDatabase[shortUrl]
+  const foundUrl = urlDatabase[req.params.id]
+  console.log("test string", foundUrl)
+
+  if (!foundUrl) {
+    res.status(403).send('URL NOT FOUND');
+    return;
+  }
+
+  if (req.session.user_id !== foundUrl.userId) {
+
+    res.status(403).send('THIS URL DOES NOT BELONG TO YOU');
+    return;
+  }
+
+  delete urlDatabase[foundUrl]
   res.redirect('/urls')
 });
 
@@ -170,14 +201,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  console.log(isLoggedIn(req), req.session.user_id )
+  console.log(isLoggedIn(req), req.session.user_id)
 
   if (!isLoggedIn(req)) {
     return res.redirect('/login');
     // return;
   }
   const user = usersDatabase[req.session.user_id]
-const urls= urlsForUser(req.session.user_id, urlDatabase)
+  const urls = urlsForUser(req.session.user_id, urlDatabase)
 
   const templateVars = { urls: urls, user: usersDatabase[req.session.user_id] };
   res.render("urls_index", templateVars);
@@ -188,7 +219,7 @@ app.get("/", (req, res) => {
   if (!isLoggedIn(req)) {
     return res.redirect('/login');
   }
-   res.redirect("/urls")
+  res.redirect("/urls")
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -196,7 +227,20 @@ app.get("/urls/:id", (req, res) => {
     return res.redirect('/login');
   }
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longUrl, user: usersDatabase[req.session.user_id] };
+  const foundUrl = urlDatabase[req.params.id]
+  console.log("test string", foundUrl)
+
+  if (!foundUrl) {
+    res.status(403).send('URL NOT FOUND');
+    return;
+  }
+
+  if (req.session.user_id !== foundUrl.userId) {
+    res.status(403).send('THIS URL DOES NOT BELONG TO YOU');
+    return;
+  }
+
+  const templateVars = { id: req.params.id, longURL: foundUrl.longUrl, user: usersDatabase[req.session.user_id] };
 
   res.render("urls_show", templateVars);
 });

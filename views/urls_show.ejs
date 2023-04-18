@@ -21,8 +21,8 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
-        <form action="" method="post">
-          <input type="text" name="lon">
+        <form action="/urls/<%= id %>" method="post">
+          <input type="text" name="longUrl">
           <button>Submit</button>
         </form> 
       </div>
